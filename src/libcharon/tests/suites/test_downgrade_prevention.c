@@ -37,10 +37,6 @@ START_TEST(test_both_support)
 	ike_sa_id_t *id_a, *id_b;
 	child_cfg_t *child_cfg;
 
-	/* Ensure full transcript auth is enabled (in case a previous test disabled it) */
-	lib->settings->set_bool(lib->settings,
-							"%s.full_transcript_auth", TRUE, lib->ns);
-
 	child_cfg = exchange_test_helper->create_sa(exchange_test_helper, &a, &b,
 												&conf);
 	id_a = a->get_id(a);
@@ -199,16 +195,12 @@ START_TEST(test_responder_no_support)
 	ike_sa_id_t *id_a, *id_b;
 	child_cfg_t *child_cfg;
 
-	/* Ensure full transcript auth is enabled for initiator */
-	lib->settings->set_bool(lib->settings,
-							"%s.full_transcript_auth", TRUE, lib->ns);
-
 	child_cfg = exchange_test_helper->create_sa(exchange_test_helper, &a, &b,
 												&conf);
 	id_a = a->get_id(a);
 	id_b = b->get_id(b);
 
-	/* IKE_SA_INIT --> (register listener BEFORE initiate to catch outgoing msg) */
+	/* IKE_SA_INIT --> */
 	assert_notify(OUT, IKE_SA_INIT_FULL_TRANSCRIPT_AUTH);
 	call_ikesa(a, initiate, child_cfg, NULL);
 	id_b->set_initiator_spi(id_b, id_a->get_initiator_spi(id_a));
@@ -225,10 +217,6 @@ START_TEST(test_responder_no_support)
 	/* <-- IKE_SA_INIT (initiator receives response without notify) */
 	assert_no_notify(IN, IKE_SA_INIT_FULL_TRANSCRIPT_AUTH);
 	id_a->set_responder_spi(id_a, id_b->get_responder_spi(id_b));
-
-	/* Re-enable for rest of test */
-	lib->settings->set_bool(lib->settings,
-							"%s.full_transcript_auth", TRUE, lib->ns);
 	exchange_test_helper->process_message(exchange_test_helper, a, NULL);
 
 	/* IKE_AUTH --> */
@@ -319,10 +307,6 @@ START_TEST(test_neither_support)
 
 	call_ikesa(a, destroy);
 	call_ikesa(b, destroy);
-
-	/* Re-enable for other tests */
-	lib->settings->set_bool(lib->settings,
-							"%s.full_transcript_auth", TRUE, lib->ns);
 }
 END_TEST
 
