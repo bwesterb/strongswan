@@ -757,29 +757,29 @@ static void process_payloads(private_ike_init_t *this, message_t *message)
 														   EXT_IKE_CHILDLESS);
 						}
 						break;
-				case INTERMEDIATE_EXCHANGE_SUPPORTED:
-					if (!this->old_sa)
-					{
-						this->ike_sa->enable_extension(this->ike_sa,
-													   EXT_IKE_INTERMEDIATE);
+					case INTERMEDIATE_EXCHANGE_SUPPORTED:
+						if (!this->old_sa)
+						{
+							this->ike_sa->enable_extension(this->ike_sa,
+														   EXT_IKE_INTERMEDIATE);
+						}
+						break;
+					case IKE_SA_INIT_FULL_TRANSCRIPT_AUTH:
+						/* Enable extension only if we support it AND peer sent the
+						 * notify AND not rekeying. Both sides must support it for the
+						 * extension to be used. Since we always send the notify when
+						 * we support it (to prevent stripping attacks), receiving it
+						 * means the peer supports it too. */
+						if (!this->old_sa && this->full_transcript_auth)
+						{
+							this->ike_sa->enable_extension(this->ike_sa,
+											EXT_IKE_SA_INIT_FULL_TRANSCRIPT_AUTH);
+						}
+						break;
+					default:
+						/* other notifies are handled elsewhere */
+						break;
 					}
-					break;
-				case IKE_SA_INIT_FULL_TRANSCRIPT_AUTH:
-					/* Enable extension only if we support it AND peer sent the
-					 * notify AND not rekeying. Both sides must support it for the
-					 * extension to be used. Since we always send the notify when
-					 * we support it (to prevent stripping attacks), receiving it
-					 * means the peer supports it too. */
-					if (!this->old_sa && this->full_transcript_auth)
-					{
-						this->ike_sa->enable_extension(this->ike_sa,
-										EXT_IKE_SA_INIT_FULL_TRANSCRIPT_AUTH);
-					}
-					break;
-				default:
-					/* other notifies are handled elsewhere */
-					break;
-				}
 
 			}
 			default:
