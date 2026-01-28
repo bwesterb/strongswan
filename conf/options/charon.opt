@@ -146,6 +146,15 @@ charon.flush_auth_cfg = no
 charon.follow_redirects = yes
 	Whether to follow IKEv2 redirects (RFC 5685).
 
+charon.full_transcript_auth = yes
+	Enable IKEv2 downgrade prevention via full transcript authentication
+	(draft-ietf-ipsecme-ikev2-downgrade-prevention).
+
+	When enabled (the default), both IKE_SA_INIT messages are included in the
+	authentication to prevent downgrade attacks on IKEv2. Both peers must
+	support this extension for it to be used; if the peer does not send the
+	IKE_SA_INIT_FULL_TRANSCRIPT_AUTH notify, standard authentication is used.
+
 charon.force_eap_only_authentication = no
 	Violate RFC 5998 and use EAP-only authentication even if the peer did not
 	send an EAP_ONLY_AUTHENTICATION notify during IKE_AUTH.
