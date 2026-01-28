@@ -732,7 +732,7 @@ METHOD(keymat_v2_t, get_auth_octets, bool,
 	}
 	chunk_clear(&skp_ppk);
 
-	if (full_transcript && peer_ike_sa_init.len)
+	if (full_transcript)
 	{
 		/* Full transcript authentication as per
 		 * draft-ietf-ipsecme-ikev2-downgrade-prevention:
