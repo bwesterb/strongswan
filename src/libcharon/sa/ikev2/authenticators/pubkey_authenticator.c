@@ -79,7 +79,8 @@ struct private_pubkey_authenticator_t {
 	chunk_t peer_ike_sa_init;
 
 	/**
-	 * Use full transcript authentication (downgrade prevention)
+	 * Use full transcript authentication (downgrade prevention,
+	 * draft-ietf-ipsecme-ikev2-downgrade-prevention)
 	 */
 	bool full_transcript;
 };

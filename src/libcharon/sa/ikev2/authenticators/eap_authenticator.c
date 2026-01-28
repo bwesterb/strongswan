@@ -81,7 +81,8 @@ struct private_eap_authenticator_t {
 	bool no_ppk_auth;
 
 	/**
-	 * Use full transcript authentication (downgrade prevention)
+	 * Use full transcript authentication (downgrade prevention,
+	 * draft-ietf-ipsecme-ikev2-downgrade-prevention)
 	 */
 	bool full_transcript;
 
