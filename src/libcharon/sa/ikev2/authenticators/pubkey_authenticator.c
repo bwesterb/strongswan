@@ -728,7 +728,7 @@ METHOD(authenticator_t, use_full_transcript, void,
 	private_pubkey_authenticator_t *this, chunk_t peer_init)
 {
 	this->peer_ike_sa_init = peer_init;
-	this->full_transcript = peer_init.len > 0;
+	this->full_transcript = TRUE;
 }
 
 METHOD(authenticator_t, destroy, void,

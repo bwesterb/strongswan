@@ -818,7 +818,7 @@ METHOD(authenticator_t, use_full_transcript, void,
 {
 	/* EAP authenticator already has both sent_init and received_init,
 	 * we just need to enable the full_transcript flag */
-	this->full_transcript = peer_init.len > 0;
+	this->full_transcript = TRUE;
 }
 
 METHOD(authenticator_t, destroy, void,
