@@ -81,6 +81,12 @@ struct private_eap_authenticator_t {
 	bool no_ppk_auth;
 
 	/**
+	 * Use full transcript authentication (downgrade prevention,
+	 * draft-ietf-ipsecme-ikev2-downgrade-prevention)
+	 */
+	bool full_transcript;
+
+	/**
 	 * Current EAP method processing
 	 */
 	eap_method_t *method;
@@ -483,7 +489,7 @@ static eap_payload_t* client_process_eap(private_eap_authenticator_t *this,
  * Verify AUTH payload
  */
 static bool verify_auth(private_eap_authenticator_t *this, message_t *message,
-						chunk_t nonce, chunk_t init)
+						chunk_t nonce, chunk_t init, chunk_t peer_init)
 {
 	auth_payload_t *auth_payload;
 	notify_payload_t *notify;
@@ -518,7 +524,7 @@ static bool verify_auth(private_eap_authenticator_t *this, message_t *message,
 	keymat = (keymat_v2_t*)this->ike_sa->get_keymat(this->ike_sa);
 	if (!keymat->get_psk_sig(keymat, TRUE, init, nonce, this->int_auth,
 							 this->msk, this->ppk, other_id, this->reserved,
-							 &auth_data))
+							 peer_init, this->full_transcript, &auth_data))
 	{
 		return FALSE;
 	}
@@ -550,7 +556,7 @@ static bool verify_auth(private_eap_authenticator_t *this, message_t *message,
  * Build AUTH payload
  */
 static bool build_auth(private_eap_authenticator_t *this, message_t *message,
-					   chunk_t nonce, chunk_t init)
+					   chunk_t nonce, chunk_t init, chunk_t peer_init)
 {
 	auth_payload_t *auth_payload;
 	identification_t *my_id;
@@ -565,7 +571,7 @@ static bool build_auth(private_eap_authenticator_t *this, message_t *message,
 
 	if (!keymat->get_psk_sig(keymat, FALSE, init, nonce, this->int_auth,
 							 this->msk, this->ppk, my_id, this->reserved,
-							 &auth_data))
+							 peer_init, this->full_transcript, &auth_data))
 	{
 		return FALSE;
 	}
@@ -579,7 +585,7 @@ static bool build_auth(private_eap_authenticator_t *this, message_t *message,
 	{
 		if (!keymat->get_psk_sig(keymat, FALSE, init, nonce, this->int_auth,
 								 this->msk, chunk_empty, my_id, this->reserved,
-								 &auth_data))
+								 peer_init, this->full_transcript, &auth_data))
 		{
 			DBG1(DBG_IKE, "failed adding NO_PPK_AUTH notify");
 			return FALSE;
@@ -597,7 +603,8 @@ METHOD(authenticator_t, process_server, status_t,
 
 	if (this->eap_complete)
 	{
-		if (!verify_auth(this, message, this->sent_nonce, this->received_init))
+		if (!verify_auth(this, message, this->sent_nonce, this->received_init,
+						 this->sent_init))
 		{
 			return FAILED;
 		}
@@ -651,7 +658,8 @@ METHOD(authenticator_t, build_server, status_t,
 		return NEED_MORE;
 	}
 	if (this->eap_complete && this->auth_complete &&
-		build_auth(this, message, this->received_nonce, this->sent_init))
+		build_auth(this, message, this->received_nonce, this->sent_init,
+				   this->received_init))
 	{
 		return SUCCESS;
 	}
@@ -665,7 +673,8 @@ METHOD(authenticator_t, process_client, status_t,
 
 	if (this->eap_complete)
 	{
-		if (!verify_auth(this, message, this->sent_nonce, this->received_init))
+		if (!verify_auth(this, message, this->sent_nonce, this->received_init,
+						 this->sent_init))
 		{
 			return FAILED;
 		}
@@ -765,7 +774,8 @@ METHOD(authenticator_t, build_client, status_t,
 		return NEED_MORE;
 	}
 	if (this->eap_complete &&
-		build_auth(this, message, this->received_nonce, this->sent_init))
+		build_auth(this, message, this->received_nonce, this->sent_init,
+				   this->received_init))
 	{
 		return NEED_MORE;
 	}
@@ -803,6 +813,14 @@ METHOD(authenticator_t, set_int_auth, void,
 	this->int_auth = int_auth;
 }
 
+METHOD(authenticator_t, use_full_transcript, void,
+	private_eap_authenticator_t *this, chunk_t peer_init)
+{
+	/* EAP authenticator already has both sent_init and received_init,
+	 * we just need to enable the full_transcript flag */
+	this->full_transcript = TRUE;
+}
+
 METHOD(authenticator_t, destroy, void,
 	private_eap_authenticator_t *this)
 {
@@ -830,6 +848,7 @@ eap_authenticator_t *eap_authenticator_create_builder(ike_sa_t *ike_sa,
 				.process = _process_client,
 				.use_ppk = _use_ppk,
 				.set_int_auth = _set_int_auth,
+				.use_full_transcript = _use_full_transcript,
 				.is_mutual = _is_mutual,
 				.destroy = _destroy,
 			},
@@ -862,6 +881,7 @@ eap_authenticator_t *eap_authenticator_create_verifier(ike_sa_t *ike_sa,
 				.process = _process_server,
 				.use_ppk = _use_ppk,
 				.set_int_auth = _set_int_auth,
+				.use_full_transcript = _use_full_transcript,
 				.is_mutual = _is_mutual,
 				.destroy = _destroy,
 			},
